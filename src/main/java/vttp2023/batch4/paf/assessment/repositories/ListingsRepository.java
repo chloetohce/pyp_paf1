@@ -23,14 +23,17 @@ public class ListingsRepository {
 	private MongoTemplate template;
 
 	/*
-	 * Write the native MongoDB query that you will be using for this method
-	 * inside this comment block
-	 * eg. db.bffs.find({ name: 'fred }) 
-	 *
-	 *
+	 *	db.listings.distinct('address.suburb',
+	 		{'address.country': {$regex: <country>, $options: 'i'},
+			'address.suburb': {$ne: null}}
+	 	)
 	 */
 	public List<String> getSuburbs(String country) {
-		return null;
+		Query q = Query.query(Criteria.where("address.country")
+			.regex(country, "i")
+			.andOperator(Criteria.where("address.suburb")
+				.ne(null)));
+		return template.findDistinct(q, "address.suburb", "listings", String.class);
 	}
 
 	/*
