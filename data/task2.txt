@@ -31,7 +31,7 @@ db.listings.aggregate([
     {$out: 'reviews'}
 ])
 
-db.listings.update(
+db.listings.updateMany(
     {reviews: {$exists: true}},
     {$unset: {reviews: ''}}
 )
