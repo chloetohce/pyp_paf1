@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 import vttp2023.batch4.paf.assessment.models.Accommodation;
 import vttp2023.batch4.paf.assessment.models.AccommodationSummary;
 import vttp2023.batch4.paf.assessment.models.Bookings;
+import vttp2023.batch4.paf.assessment.models.User;
+import vttp2023.batch4.paf.assessment.repositories.BookingsRepository;
 import vttp2023.batch4.paf.assessment.repositories.ListingsRepository;
 
 @Service
@@ -21,6 +23,9 @@ public class ListingsService {
 
 	@Autowired
 	private ForexService forexSvc;
+
+	@Autowired
+	private BookingsRepository bookingsRepository;
 	
 	// IMPORTANT: DO NOT MODIFY THIS METHOD.
 	// If this method is changed, any assessment task relying on this method will
@@ -56,7 +61,17 @@ public class ListingsService {
 	// TODO: Task 6 
 	// IMPORTANT: DO NOT MODIFY THE SIGNATURE OF THIS METHOD.
 	// You may only add annotations and throw exceptions to this method
-	public void createBooking(Bookings booking) {
+	public void createBooking(Bookings booking) throws Exception {
+		Optional<User> opt = bookingsRepository.userExists(booking.getEmail());
+		if (opt.isEmpty()) {
+			User user = new User(booking.getEmail(), booking.getName());
+			bookingsRepository.newUser(user);
+			opt = bookingsRepository.userExists(booking.getEmail());
+			if (opt.isEmpty())
+				throw new Exception("Error creating user with email %s.".formatted(booking.getEmail()));
+		}
+
+		bookingsRepository.newBookings(booking);
 	}
 
 }

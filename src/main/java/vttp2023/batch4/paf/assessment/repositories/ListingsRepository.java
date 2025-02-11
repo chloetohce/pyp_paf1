@@ -8,6 +8,9 @@ import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.GroupOperation;
+import org.springframework.data.mongodb.core.aggregation.MatchOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Repository;
@@ -29,13 +32,30 @@ public class ListingsRepository {
 	 		{'address.country': {$regex: <country>, $options: 'i'},
 			'address.suburb': {$ne: null}}
 	 	)
+			
+		db.listings.aggregate([
+			{$match: {'
+				address.suburb': {$nin: ['', null]}
+			}},
+			{$group: {_id: '$address.suburb'}}
+		])
 	 */
 	public List<String> getSuburbs(String country) {
-		Query q = Query.query(Criteria.where("address.country")
-			.regex(country, "i")
-			.andOperator(Criteria.where("address.suburb")
-				.ne(null)));
-		return template.findDistinct(q, "address.suburb", "listings", String.class);
+		// Query q = Query.query(Criteria.where("address.country")
+		// 	.regex(country, "i")
+		// 	.andOperator(Criteria.where("address.suburb")
+		// 		.ne(null)));
+		// return template.findDistinct(q, "address.suburb", "listings", String.class);
+
+		MatchOperation filterEmpty = Aggregation.match(Criteria.where("address.country").nin(null, ""));
+
+		GroupOperation group = Aggregation.group("$address.suburb");
+		Aggregation pipeline = Aggregation.newAggregation(filterEmpty, group);
+		
+		List<Document> results = template.aggregate(pipeline, "listings", Document.class).getMappedResults();
+		return results.stream()
+			.map(d -> d.getString("_id"))
+			.toList();
 	}
 
 	/*
